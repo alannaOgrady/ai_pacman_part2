@@ -73,31 +73,50 @@ class ReflexAgent(Agent):
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
         timer = ghostState.scaredTimer
-        dist_to_ghost = min([manhattanDistance(newPos, ghost.getPosition()) for ghost in newGhostStates])
         #print dist_to_ghost
         dist_to_food = min([manhattanDistance(newPos, food ) for food in newFood])
         #print timer
         #to stop pacman getting stuck in corners
-        print dist_to_food
-        if dist_to_food == 0:
+        currentFood = currentGameState.getFood().asList()
+
+        score = -99999
+        for state in newGhostStates:
+          position_of_ghost = state.getPosition()
+          if newPos == position_of_ghost or manhattanDistance(position_of_ghost, newPos) <=1:
+            #print "B"
+            return score
+
+        if len(newFood.asList()) < len(currentFood):
+          #print "A"
           #this action would mean you get to eat
-          return dist_to_food*10000
-        if action == "Stop":
-          return -99999999
-        if timer > 0:
-          print "Timer", timer
-          return -100/dist_to_food
-        if dist_to_ghost > 2 :
-          print "A"
-          return  .1*dist_to_food
-        if dist_to_ghost > 1:
-          print "B"
-          return -20/dist_to_food
+          return 50
+
+        for food in currentFood:
+          score = min(score, manhattanDistance(food, newPos))
+          if action == "stop":
+            #print "D"
+            return -99999
         
-        if len(newFood.asList()) ==1:
-          print "E"
-          return -1000/dist_to_food 
+        return 1.0/(1.0 + score) 
+
+
+        # curPos = currentGameState.getPacmanPosition()
+        # curFoodList = currentGameState.getFood().asList()
+        # curGhostStates = currentGameState.getGhostStates()
+        # curScaredTimes = [ghostState.scaredTimer for ghostState in curGhostStates]
+
+        # distance = float("inf")
+        # for ghostState in newGhostStates:
+        #   ghostPos = ghostState.getPosition()
+        #   if ghostPos == newPos:
+        #     return float("-inf")
         
+        # for food in curFoodList:
+        #   distance = min(distance,manhattanDistance(food,newPos))
+        #   if Directions.STOP in action:  
+        #     return float("-inf")
+
+        # return 1.0/(1.0 + distance) 
         
         "*** YOUR CODE HERE ***"
         #return successorGameState.getScore()
