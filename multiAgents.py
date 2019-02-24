@@ -74,10 +74,14 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
         timer = ghostState.scaredTimer
         #print dist_to_ghost
-        dist_to_food = min([manhattanDistance(newPos, food ) for food in newFood])
+        
         #print timer
         #to stop pacman getting stuck in corners
+        capsulePositions = currentGameState.getCapsules()
         currentFood = currentGameState.getFood().asList()
+        currentPosition = currentGameState.getPacmanPosition()
+        distance_to_capsule = -999
+        east_count = 0
 
         score = -99999
         for state in newGhostStates:
@@ -85,19 +89,41 @@ class ReflexAgent(Agent):
           if newPos == position_of_ghost or manhattanDistance(position_of_ghost, newPos) <=1:
             #print "B"
             return score
+          
 
         if len(newFood.asList()) < len(currentFood):
           #print "A"
           #this action would mean you get to eat
-          return 50
+          return 50#check direction of  most food food
+
+        for food in currentFood:
+          if food[0] > currentPosition[0]:
+            east_count += 1
+
 
         for food in currentFood:
           score = min(score, manhattanDistance(food, newPos))
           if action == "stop":
             #print "D"
             return -99999
+          if east_count == 0:
+            if action == Directions.EAST:
+              score += 0.2
+        # if len(capsulePositions) > 0:
+        #   for capsule in capsulePositions:
+        #     distance_to_capsule = min(distance_to_capsule, manhattanDistance(newPos, capsule ))
+        #     if distance_to_capsule < 50 and distance_to_capsule > -999:
+        #       #print "here"
+        #       return 50
+          
+
+            # if action == Directions.WEST:
+            #   score -= 0.01*west_count
+
         
-        return 1.0/(1.0 + score) 
+
+        
+        return 1.0/(1.0 + score) - (100*len(newFood.asList()))
 
 
         # curPos = currentGameState.getPacmanPosition()
