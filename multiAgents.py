@@ -82,6 +82,9 @@ class ReflexAgent(Agent):
         currentPosition = currentGameState.getPacmanPosition()
         distance_to_capsule = -999
         east_count = 0
+        west_count = 0
+        north_count = 0
+        south_count = 0
 
         score = -99999
         for state in newGhostStates:
@@ -96,9 +99,16 @@ class ReflexAgent(Agent):
           #this action would mean you get to eat
           return 50#check direction of  most food food
 
+        numCurrentFood = len(currentFood)
         for food in currentFood:
           if food[0] > currentPosition[0]:
             east_count += 1
+          if food[1] > currentPosition[1]:
+            north_count += 1
+
+
+        west_count = numCurrentFood - east_count
+        south_count = numCurrentFood - north_count
 
 
         for food in currentFood:
@@ -107,7 +117,17 @@ class ReflexAgent(Agent):
             #print "D"
             return -99999
           if east_count == 0:
+            #decrease chance of going in this direction by increasing score (which will decrease value returned from function)
             if action == Directions.EAST:
+              score += 0.2
+          if north_count == 0:
+            if action == Directions.NORTH:
+              score += 0.2
+          if west_count == 0:
+            if action == Directions.WEST:
+              score += 0.2
+          if south_count == 0:
+            if action == Directions.SOUTH:
               score += 0.2
         # if len(capsulePositions) > 0:
         #   for capsule in capsulePositions:
