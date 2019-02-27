@@ -219,7 +219,59 @@ class MinimaxAgent(MultiAgentSearchAgent):
           gameState.getNumAgents():
             Returns the total number of agents in the game
         """
-        "*** YOUR CODE HERE ***"
+        
+        num_agents = gameState.getNumAgents()
+        pacman_actions = []
+
+        def value(state, count):
+          #if value is terminal state - no more sucessors
+          if state.isWin() or state.isLose() or count >= self.depth*num_agents:
+            return self.evaluationFunction(state)
+          
+          if count % num_agents == 0:
+            #if value max (pacman) 
+            return max_value(state, count)
+          elif count % num_agents != 0:
+            #if value min (ghost)
+            return min_value(state, count)
+
+        #pacmans turn
+        def max_value(state, count):
+          the_value = -9999
+          #how to get index and action
+          index = count % num_agents
+          actions = state.getLegalActions(index)
+          #print actions
+          filter(lambda a: a != "Stop", actions)
+          for action in actions:
+            successor = state.generateSuccessor(index, action)
+            the_value = max(the_value, value(successor, count + 1))
+            if count == 0:
+              pacman_actions.append(the_value)
+          return the_value
+
+        def min_value(state, count):
+          the_value = 9999
+          #how to get index and action
+          index = count % num_agents
+          actions = state.getLegalActions(index)
+          filter(lambda a: a != "Stop", actions)
+          for action in actions:
+            successor = state.generateSuccessor(index, action)
+            the_value = min(the_value, value(successor, count + 1))
+          return the_value
+
+
+        iteration_count = 0
+        result = value(gameState, iteration_count)
+        print result
+        best_action = pacman_actions.index(max(pacman_actions))
+        result_actions = gameState.getLegalActions(0)[best_action]
+        print result_actions
+        filter(lambda a: a != "Stop", result_actions)
+        return result_actions
+
+    
         util.raiseNotDefined()
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
