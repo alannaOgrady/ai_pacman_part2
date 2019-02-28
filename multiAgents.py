@@ -283,6 +283,67 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
+        num_agents = gameState.getNumAgents()
+        pacman_actions = []
+        alpha = -9999
+        beta = 9999
+
+        def alpha_beta_pruning(state, count, alpha, beta):
+          #if value is terminal state - no more sucessors
+          if state.isWin() or state.isLose() or count >= self.depth*num_agents:
+            return self.evaluationFunction(state)
+          
+          if count % num_agents == 0:
+            #if value max (pacman) 
+            return max_value(state, count, alpha, beta)
+          elif count % num_agents != 0:
+            #if value min (ghost)
+            return min_value(state, count, alpha, beta)
+
+        #pacmans turn
+        def max_value(state, count, alpha, beta):
+          the_value = -9999
+          #how to get index and action
+          index = count % num_agents
+          actions = state.getLegalActions(index)
+          #print actions
+          filter(lambda a: a != "Stop", actions)
+          for action in actions:
+            successor = state.generateSuccessor(index, action)
+            the_value = max(the_value, alpha_beta_pruning(successor, count + 1, alpha, beta))
+            if count == 0:
+              pacman_actions.append(the_value)
+            if the_value > beta:
+              return the_value
+            alpha = max(alpha, the_value)
+          return the_value
+
+        def min_value(state, count, alpha, beta):
+          the_value = 9999
+          #how to get index and action
+          index = count % num_agents
+          actions = state.getLegalActions(index)
+          filter(lambda a: a != "Stop", actions)
+          for action in actions:
+            successor = state.generateSuccessor(index, action)
+            the_value = min(the_value, alpha_beta_pruning(successor, count + 1, alpha, beta))
+            if the_value < alpha:
+              return the_value
+            beta = min(beta, the_value)
+          return the_value
+
+
+        iteration_count = 0
+        
+        result = alpha_beta_pruning(gameState, iteration_count, alpha, beta)
+        
+        best_action = pacman_actions.index(max(pacman_actions))
+        result_actions = gameState.getLegalActions(0)[best_action]
+        filter(lambda a: a != "Stop", result_actions)
+        return result_actions
+
+
+
         "*** YOUR CODE HERE ***"
         util.raiseNotDefined()
 
@@ -308,7 +369,84 @@ def betterEvaluationFunction(currentGameState):
 
       DESCRIPTION: <write something here so we know what you did>
     """
-    "*** YOUR CODE HERE ***"
+    successorGameState = currentGameState.generatePacmanSuccessor(action)
+    newPos = successorGameState.getPacmanPosition()
+    newFood = successorGameState.getFood()
+    newGhostStates = successorGameState.getGhostStates()
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+    timer = ghostState.scaredTimer
+    #print dist_to_ghost
+    
+    #print timer
+    #to stop pacman getting stuck in corners
+    capsulePositions = currentGameState.getCapsules()
+    currentFood = currentGameState.getFood().asList()
+    currentPosition = currentGameState.getPacmanPosition()
+    distance_to_capsule = -999
+    east_count = 0
+    west_count = 0
+    north_count = 0
+    south_count = 0
+
+    score = -99999
+    for state in newGhostStates:
+      position_of_ghost = state.getPosition()
+      if newPos == position_of_ghost or manhattanDistance(position_of_ghost, newPos) <=1:
+        #print "B"
+        return score
+      
+
+    if len(newFood.asList()) < len(currentFood):
+      #print "A"
+      #this action would mean you get to eat
+      return 50#check direction of  most food food
+
+    numCurrentFood = len(currentFood)
+    for food in currentFood:
+      if food[0] > currentPosition[0]:
+        east_count += 1
+      if food[1] > currentPosition[1]:
+        north_count += 1
+
+
+    west_count = numCurrentFood - east_count
+    south_count = numCurrentFood - north_count
+
+
+    for food in currentFood:
+      score = min(score, manhattanDistance(food, newPos))
+      if action == "stop":
+        #print "D"
+        return -99999
+      if east_count == 0:
+        #decrease chance of going in this direction by increasing score (which will decrease value returned from function)
+        if action == Directions.EAST:
+          score += 0.2
+      if north_count == 0:
+        if action == Directions.NORTH:
+          score += 0.2
+      if west_count == 0:
+        if action == Directions.WEST:
+          score += 0.2
+      if south_count == 0:
+        if action == Directions.SOUTH:
+          score += 0.2
+    # if len(capsulePositions) > 0:
+    #   for capsule in capsulePositions:
+    #     distance_to_capsule = min(distance_to_capsule, manhattanDistance(newPos, capsule ))
+    #     if distance_to_capsule < 50 and distance_to_capsule > -999:
+    #       #print "here"
+    #       return 50
+      
+
+        # if action == Directions.WEST:
+        #   score -= 0.01*west_count
+
+    
+
+    
+    return 1.0/(1.0 + score) - (100*len(newFood.asList()))
+
     util.raiseNotDefined()
 
 # Abbreviation
