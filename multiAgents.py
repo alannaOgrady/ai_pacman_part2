@@ -15,6 +15,7 @@
 from util import manhattanDistance
 from game import Directions
 import random, util
+import time
 
 from game import Agent
 
@@ -27,7 +28,8 @@ class ReflexAgent(Agent):
       it in any way you see fit, so long as you don't touch our method
       headers.
     """
-
+    global max_time
+    max_time = -999
 
     def getAction(self, gameState):
         """
@@ -42,7 +44,12 @@ class ReflexAgent(Agent):
         legalMoves = gameState.getLegalActions()
 
         # Choose one of the best actions
+        start = time.time()
+        global max_time
         scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
+        end = time.time()
+        max_time = max(max_time, (end - start))
+        print max_time
         bestScore = max(scores)
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
@@ -67,6 +74,7 @@ class ReflexAgent(Agent):
         to create a masterful evaluation function.
         """
         # Useful information you can extract from a GameState (pacman.py)
+        start = time.time()
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         newPos = successorGameState.getPacmanPosition()
         newFood = successorGameState.getFood()
@@ -142,7 +150,8 @@ class ReflexAgent(Agent):
 
         
 
-        
+        # end = time.time()
+        # print(end - start)
         return 1.0/(1.0 + score) - (100*len(newFood.asList()))
 
 
@@ -175,7 +184,8 @@ def scoreEvaluationFunction(currentGameState):
       This evaluation function is meant for use with adversarial search agents
       (not reflex agents).
     """
-    return currentGameState.getScore()
+
+    return currentGameState.getScore() 
 
 class MultiAgentSearchAgent(Agent):
     """
@@ -201,7 +211,8 @@ class MinimaxAgent(MultiAgentSearchAgent):
     """
       Your minimax agent (question 2)
     """
-
+    global max_time
+    max_time = -999
     def getAction(self, gameState):
         """
           Returns the minimax action from the current gameState using self.depth
@@ -261,7 +272,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
             the_value = min(the_value, value(successor, count + 1))
           return the_value
 
-
+        start = time.time()
         iteration_count = 0
         result = value(gameState, iteration_count)
         print result
@@ -269,6 +280,12 @@ class MinimaxAgent(MultiAgentSearchAgent):
         result_actions = gameState.getLegalActions(0)[best_action]
         print result_actions
         filter(lambda a: a != "Stop", result_actions)
+
+        end = time.time()
+        global max_time
+        max_time = max(max_time, (end - start))
+        print max_time
+
         return result_actions
 
     
@@ -278,11 +295,14 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     """
       Your minimax agent with alpha-beta pruning (question 3)
     """
+    global max_time
+    max_time = -999
 
     def getAction(self, gameState):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
+        
         num_agents = gameState.getNumAgents()
         pacman_actions = []
         alpha = -9999
@@ -335,11 +355,19 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
         iteration_count = 0
         
+        start = time.time()
+
         result = alpha_beta_pruning(gameState, iteration_count, alpha, beta)
         
         best_action = pacman_actions.index(max(pacman_actions))
         result_actions = gameState.getLegalActions(0)[best_action]
         filter(lambda a: a != "Stop", result_actions)
+
+        end = time.time()
+        global max_time
+        max_time = max(max_time, (end - start))
+        print max_time
+
         return result_actions
 
 
@@ -369,86 +397,40 @@ def betterEvaluationFunction(currentGameState):
 
       DESCRIPTION: <write something here so we know what you did>
     """
-    successorGameState = currentGameState.generatePacmanSuccessor(action)
-    newPos = successorGameState.getPacmanPosition()
-    newFood = successorGameState.getFood()
-    newGhostStates = successorGameState.getGhostStates()
-    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
-    timer = ghostState.scaredTimer
-    #print dist_to_ghost
-    
-    #print timer
-    #to stop pacman getting stuck in corners
-    capsulePositions = currentGameState.getCapsules()
-    currentFood = currentGameState.getFood().asList()
-    currentPosition = currentGameState.getPacmanPosition()
-    distance_to_capsule = -999
-    east_count = 0
-    west_count = 0
-    north_count = 0
-    south_count = 0
-
-    score = -99999
-    for state in newGhostStates:
-      position_of_ghost = state.getPosition()
-      if newPos == position_of_ghost or manhattanDistance(position_of_ghost, newPos) <=1:
-        #print "B"
-        return score
-      
-
-    if len(newFood.asList()) < len(currentFood):
-      #print "A"
-      #this action would mean you get to eat
-      return 50#check direction of  most food food
-
-    numCurrentFood = len(currentFood)
-    for food in currentFood:
-      if food[0] > currentPosition[0]:
-        east_count += 1
-      if food[1] > currentPosition[1]:
-        north_count += 1
-
-
-    west_count = numCurrentFood - east_count
-    south_count = numCurrentFood - north_count
-
-
-    for food in currentFood:
-      score = min(score, manhattanDistance(food, newPos))
-      if action == "stop":
-        #print "D"
-        return -99999
-      if east_count == 0:
-        #decrease chance of going in this direction by increasing score (which will decrease value returned from function)
-        if action == Directions.EAST:
-          score += 0.2
-      if north_count == 0:
-        if action == Directions.NORTH:
-          score += 0.2
-      if west_count == 0:
-        if action == Directions.WEST:
-          score += 0.2
-      if south_count == 0:
-        if action == Directions.SOUTH:
-          score += 0.2
-    # if len(capsulePositions) > 0:
-    #   for capsule in capsulePositions:
-    #     distance_to_capsule = min(distance_to_capsule, manhattanDistance(newPos, capsule ))
-    #     if distance_to_capsule < 50 and distance_to_capsule > -999:
-    #       #print "here"
-    #       return 50
-      
-
-        # if action == Directions.WEST:
-        #   score -= 0.01*west_count
-
-    
-
-    
-    return 1.0/(1.0 + score) - (100*len(newFood.asList()))
 
     util.raiseNotDefined()
 
 # Abbreviation
 better = betterEvaluationFunction
 
+"""
+ATTEMPTS AT QUESTION 5
+
+def scoreEvaluationFunction(currentGameState):
+    
+    currentFood = currentGameState.getFood().asList()
+    currentPosition = currentGameState.getPacmanPosition()
+    ghostStates = currentGameState.getGhostStates()
+    
+    ghost_score = 0
+    max_ghost_dist = -99
+    for ghost in ghostStates:
+      timer = ghost.scaredTimer
+      if timer > 0:
+        ghost_score = 50
+      else:
+        #get max distance from ghost
+        max_ghost_dist = max(max_ghost_dist, manhattanDistance(ghost.getPosition(), currentPosition))
+        ghost_score -= 0.001/(1 + max_ghost_dist)
+
+    food_score = 99999
+    for food in currentFood:
+      food_score = min(food_score, manhattanDistance(food, currentPosition))
+      if len(food) == 0 or food_score == 0:
+        food_score = 0
+      else:
+        food_score = 1/ food_score
+    
+    return ghost_score + food_score
+
+"""
